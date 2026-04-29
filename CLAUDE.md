@@ -14,11 +14,7 @@ Python + PySimpleGUI で実装し、PyInstaller で exe 配布。
 
 ## 技術スタック
 
-- Python 3.x
-- PySimpleGUI（システムトレイ UI）
-- subprocess（powercfg コマンド実行）
-- json（設定ファイル管理）
-- PyInstaller（exe 化）
+→ [doc/architecture.md](doc/architecture.md) の「技術選定の理由」を参照
 
 ## よく使うコマンド
 
@@ -48,29 +44,7 @@ powercfg /query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE
 
 ## ディレクトリ構成
 
-```
-SleepSwitcher/
-├── CLAUDE.md
-├── spec.md
-├── architecture.md
-├── backlog.md
-├── main.py
-├── requirements.txt
-├── config/
-│   ├── __init__.py
-│   └── settings.py
-├── core/
-│   ├── __init__.py
-│   ├── power_control.py
-│   ├── schedule.py
-│   └── state_manager.py
-├── ui/
-│   ├── __init__.py
-│   └── tray_app.py
-└── data/
-    ├── config.json
-    └── holidays.json
-```
+→ [doc/architecture.md](doc/architecture.md) の「ディレクトリ構成」を参照
 
 ## 制約・注意事項
 
