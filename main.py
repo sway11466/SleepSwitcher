@@ -10,6 +10,7 @@ from ui.tray_app import TrayApp
 def main():
     manager = StateManager()
     app = TrayApp(manager)
+    manager.set_state_change_callback(app._refresh)
     app.run()
 
 

@@ -1,25 +1,27 @@
 import json
 import os
 
-_CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'config.json')
+_CONFIG_PATH = os.path.join(os.environ['APPDATA'], 'SleepSwitcher', 'config.json')
 
 
 def default() -> dict:
     return {
+        'timeouts': {
+            'standby_ac':   15,
+            'standby_dc':   10,
+            'hibernate_ac': 180,
+            'hibernate_dc': 180,
+        },
         'schedule': {
-            'enabled': True,
-            'rules': [
-                {
-                    'weekday': 'mon-fri',
-                    'description': '平日',
-                    'off_hours': {'start': '09:00', 'end': '18:00'},
-                },
-                {
-                    'weekday': 'sat-sun',
-                    'description': '休日',
-                    'off_hours': None,
-                },
-            ],
+            'days': {
+                'mon': [],
+                'tue': [],
+                'wed': [],
+                'thu': [],
+                'fri': [],
+                'sat': [],
+                'sun': [],
+            },
             'holidays': [],
         },
     }
