@@ -45,9 +45,9 @@ main.py
 
 ### `config/settings.py`
 
-- `data/config.json` の読み書き（スケジュールルールのみ）
+- `data/config.json` の読み書き
+- 管理対象：タイムアウト値（4値）とスケジュールルール（曜日ごとの from-to 配列）
 - デフォルト設定値の定義
-- スリープ時間は管理しない（Windows の設定値が Single Source of Truth）
 
 ```python
 def load() -> dict
@@ -71,10 +71,11 @@ def disable_all() -> None             # 4値をすべて 0 に設定
 
 - 現在時刻・曜日からスリープ OFF にすべきか判定
 - 純粋関数（副作用なし）
+- 曜日ごとの from-to 配列を走査して現在時刻が含まれるか判定
 
 ```python
-def should_disable_sleep(config: dict, now: datetime) -> bool
-def is_holiday(config: dict, date: date) -> bool  # フェーズ 3 用スタブ
+def should_disable_sleep(schedule: dict, now: datetime) -> bool
+def is_holiday(schedule: dict, date: date) -> bool  # フェーズ 3 用スタブ
 ```
 
 ### `core/state_manager.py`
@@ -100,25 +101,27 @@ class StateManager:
 
 ## 設計上の判断
 
-### Windows 設定値の Single Source of Truth
+### タイムアウト値の管理方針
 
-スリープ時間は config.json に持たず、Windows の設定値をそのまま使う。
-起動時に `powercfg /query` で読み込み、「有効化」時はその値を復元する。
+- `config.json` の `timeouts` が唯一の真実（Single Source of Truth）
+- 起動時：`config.json` から読み込み Windows に書き込む
+- 設定変更時：`config.json` に保存してから Windows に書き込む
+- 無効化時：Windows を 0 に設定するが `config.json` の値は保持する
 
 ### スリープ無効化・有効化の実装方針
 
 - 無効化：standby/hibernate の AC/DC 計4値をすべて 0 に書き込む
-- 有効化：起動時に読み込んだ元の値を書き戻す
+- 有効化：`config.json` の `timeouts` 値を Windows に書き込む
 
 ### スケジュール適用方式：定期ポーリング（1分ごと）
 
 時刻切り替わり時だけ検知する方式（B案）より実装がシンプルで確実。
 アプリ性質上 CPU 負荷は問題にならない。
 
-### 手動操作とスケジュールの競合
+### 手動操作とスケジュールの優先度
 
-手動操作は即時反映し、次の1分ポーリング時にスケジュールが再評価・上書きする。
-「手動ロック」機能は初版では実装しない（YAGNI）。
+優先度の概念を持たず、後勝ちで上書きする。
+スケジュール変更保存時は `apply_schedule(now)` を即時実行し、現在時刻で評価・適用する。
 
 ### 祝日対応の拡張ポイント
 
@@ -129,7 +132,7 @@ class StateManager:
 
 | 技術 | 理由 |
 |------|------|
-| PySimpleGUI | Python でのトレイアプリ実装が最もシンプル |
+| pystray + tkinter | トレイ常駐は pystray、ダイアログは tkinter（標準ライブラリ）で構成 |
 | JSON 設定ファイル | 外部ライブラリ不要、人間が読める |
 | powercfg | Windows 標準コマンド、管理者権限不要 |
 | PyInstaller | 単一 exe にまとめられ配布が容易 |
