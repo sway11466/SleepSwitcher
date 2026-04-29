@@ -4,12 +4,13 @@
 
 | # | 機能 | 詳細 |
 |---|------|------|
-| F1 | スリープ時間設定 | モニタースリープまでの時間を分単位で設定 |
-| F2 | スリープ無効化 | スリープを OFF（常時稼働） |
-| F3 | スリープ有効化 | スリープを ON（F1 の設定時間後に自動スリープ） |
+| F1 | スリープ時間設定 | デバイスのスリープ・休止状態までの時間を分単位で設定（電源接続・バッテリーそれぞれ） |
+| F2 | スリープ無効化 | スリープ・休止状態を OFF（常時稼働） |
+| F3 | スリープ有効化 | スリープ・休止状態を ON（F1 の設定時間後に自動移行） |
 | F4 | スケジュール機能 | 曜日単位で異なるルールを自動適用 |
 | F5 | 常駐アプリ | システムトレイに常駐し、トレイアイコンから操作 |
-| F6 | 設定永続化 | 設定を JSON ファイルに保存・起動時に復元 |
+| F6 | Windows 設定の読み書き | 起動時に Windows の現在値を読み込み、変更時は Windows に直接書き込む |
+| F7 | スケジュール設定の永続化 | スケジュールルールのみ JSON ファイルに保存・起動時に復元 |
 
 ## スケジュール仕様
 
@@ -46,11 +47,34 @@ def should_sleep_be_disabled_now(config, current_datetime) -> bool:
 ]
 ```
 
+## Windows 電源設定の仕様
+
+### 管理対象の設定値
+
+| 設定 | powercfg パラメータ | 説明 |
+|------|-------------------|------|
+| デバイスをスリープ（電源接続） | `standby-timeout-ac` | 0 = 無効 |
+| デバイスをスリープ（バッテリー） | `standby-timeout-dc` | 0 = 無効 |
+| 休止状態（電源接続） | `hibernate-timeout-ac` | 0 = 無効 |
+| 休止状態（バッテリー） | `hibernate-timeout-dc` | 0 = 無効 |
+
+### 読み書きの方針
+
+- **起動時**：`powercfg /query` で Windows の現在値をすべて読み込む
+- **変更時**：`powercfg /change` で Windows に直接書き込む
+- **アプリ側には値を持たない**：Windows の設定値が唯一の真実（Single Source of Truth）
+
+### スリープ無効化・有効化の動作
+
+- **無効化**：4つのタイムアウト値をすべて 0 に設定
+- **有効化**：無効化前に読み込んだ Windows の値に戻す（値はメモリ上に保持）
+
 ## 設定ファイル仕様（config.json）
+
+スケジュールルールのみ管理する。スリープ時間は Windows の設定値を直接使うため持たない。
 
 ```json
 {
-  "sleep_time_minutes": 15,
   "schedule": {
     "enabled": true,
     "rules": [
@@ -77,7 +101,6 @@ def should_sleep_be_disabled_now(config, current_datetime) -> bool:
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| `sleep_time_minutes` | int | スリープまでの分数（1〜480） |
 | `schedule.enabled` | bool | スケジュール機能の有効/無効 |
 | `schedule.rules[].weekday` | string | `"mon-fri"` / `"sat-sun"` / `"mon"` 等 |
 | `schedule.rules[].off_hours` | object\|null | スリープ OFF にする時間帯。null で終日 ON |

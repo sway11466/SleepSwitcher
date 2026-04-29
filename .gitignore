@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude Code
+.claude/
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Virtual environment
+.venv/
+venv/

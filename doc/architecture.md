@@ -45,9 +45,9 @@ main.py
 
 ### `config/settings.py`
 
-- `data/config.json` の読み書き
+- `data/config.json` の読み書き（スケジュールルールのみ）
 - デフォルト設定値の定義
-- 設定値のバリデーション
+- スリープ時間は管理しない（Windows の設定値が Single Source of Truth）
 
 ```python
 def load() -> dict
@@ -59,11 +59,12 @@ def default() -> dict
 
 - `powercfg` コマンドを subprocess で実行
 - OS との唯一の接点（副作用を1箇所に集約）
+- 管理対象：standby-timeout と hibernate-timeout の AC/DC 計4値
 
 ```python
-def disable_sleep() -> None          # monitor-timeout-ac 0
-def enable_sleep(minutes: int) -> None  # monitor-timeout-ac {minutes}
-def get_current_timeout() -> int     # 現在の設定値を取得
+def read_all_timeouts() -> dict       # 4値を Windows から読み込む
+def write_all_timeouts(values: dict) -> None  # 4値を Windows に書き込む
+def disable_all() -> None             # 4値をすべて 0 に設定
 ```
 
 ### `core/schedule.py`
@@ -78,15 +79,16 @@ def is_holiday(config: dict, date: date) -> bool  # フェーズ 3 用スタブ
 
 ### `core/state_manager.py`
 
-- 現在のスリープ状態（有効/無効）を保持
-- 1分ごとのスケジュール自動適用タイマーを管理
+- 起動時に Windows の現在値を読み込みメモリに保持
+- 現在のスリープ状態（有効/無効）を管理
+- 1分ごとのスケジュール自動適用タイマーを管理（フェーズ2）
 - 手動操作とスケジュール適用の調整
 
 ```python
 class StateManager:
     def apply_schedule(self) -> None   # スケジュールに従って自動適用
-    def force_disable(self) -> None    # 手動: スリープ無効化
-    def force_enable(self) -> None     # 手動: スリープ有効化
+    def force_disable(self) -> None    # 手動: スリープ無効化（4値を 0 に）
+    def force_enable(self) -> None     # 手動: スリープ有効化（読み込んだ値に戻す）
     def get_status(self) -> dict       # UI 表示用の現在状態
 ```
 
@@ -97,6 +99,16 @@ class StateManager:
 - 設定変更ダイアログの表示
 
 ## 設計上の判断
+
+### Windows 設定値の Single Source of Truth
+
+スリープ時間は config.json に持たず、Windows の設定値をそのまま使う。
+起動時に `powercfg /query` で読み込み、「有効化」時はその値を復元する。
+
+### スリープ無効化・有効化の実装方針
+
+- 無効化：standby/hibernate の AC/DC 計4値をすべて 0 に書き込む
+- 有効化：起動時に読み込んだ元の値を書き戻す
 
 ### スケジュール適用方式：定期ポーリング（1分ごと）
 
