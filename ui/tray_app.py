@@ -1,10 +1,12 @@
 import threading
 import tkinter as tk
+from tkinter import ttk, messagebox
 
 import pystray
 from PIL import Image, ImageDraw
 
 from core.state_manager import StateManager
+from core import power_control
 
 
 def _create_icon_image(sleep_enabled: bool) -> Image.Image:
@@ -40,32 +42,77 @@ class TrayApp:
         self._manager.force_disable()
         self._refresh()
 
+    def _on_open_settings(self):
+        threading.Thread(target=self._show_settings_dialog, daemon=True).start()
+
+    def _show_settings_dialog(self):
+        current = power_control.read_all_timeouts()
+
+        root = tk.Tk()
+        root.title('SleepSwitcher — 設定')
+        root.resizable(False, False)
+
+        fields = [
+            ('standby_ac',   'スリープ（電源接続）',   '分'),
+            ('standby_dc',   'スリープ（バッテリー）',  '分'),
+            ('hibernate_ac', '休止状態（電源接続）',   '分'),
+            ('hibernate_dc', '休止状態（バッテリー）',  '分'),
+        ]
+
+        vars_ = {}
+        for i, (key, label, unit) in enumerate(fields):
+            tk.Label(root, text=label, anchor='w').grid(row=i, column=0, padx=12, pady=6, sticky='w')
+            var = tk.IntVar(value=current[key])
+            vars_[key] = var
+            tk.Spinbox(root, from_=0, to=480, textvariable=var, width=6).grid(row=i, column=1, padx=4)
+            tk.Label(root, text=unit).grid(row=i, column=2, padx=(0, 12), sticky='w')
+
+        tk.Label(root, text='※ 0 = 無効', fg='gray').grid(
+            row=len(fields), column=0, columnspan=3, padx=12, pady=(0, 4), sticky='w'
+        )
+
+        def on_apply():
+            values = {key: var.get() for key, var in vars_.items()}
+            power_control.write_all_timeouts(values)
+            self._manager.update_restore_timeouts(values)
+            self._refresh()
+            messagebox.showinfo('完了', 'Windows の電源設定を更新しました。', parent=root)
+
+        btn_frame = tk.Frame(root)
+        btn_frame.grid(row=len(fields) + 1, column=0, columnspan=3, pady=(4, 12))
+        tk.Button(btn_frame, text='変更', width=10, command=on_apply).pack(side='left', padx=6)
+        tk.Button(btn_frame, text='閉じる', width=10, command=root.destroy).pack(side='left', padx=6)
+
+        root.mainloop()
+
     def _on_exit(self):
         self._icon.stop()
 
     # --- helpers ---
 
     def _make_menu(self) -> pystray.Menu:
-        status = self._manager.get_status()
-        label = '現在: スリープ有効' if status['sleep_enabled'] else '現在: スリープ無効'
-        t = status['restore_timeouts']
-        timeout_label = (
-            f"復元値: スリープ {t['standby_ac']}分(AC)/{t['standby_dc']}分(DC)  "
-            f"休止 {t['hibernate_ac']}分(AC)/{t['hibernate_dc']}分(DC)"
-        )
+        sleep_enabled = self._manager.get_status()['sleep_enabled']
         return pystray.Menu(
-            pystray.MenuItem(label, None, enabled=False),
-            pystray.MenuItem(timeout_label, None, enabled=False),
+            pystray.MenuItem(
+                'スリープ有効化',
+                lambda: self._on_enable_sleep(),
+                checked=lambda item: sleep_enabled,
+                radio=True,
+            ),
+            pystray.MenuItem(
+                'スリープ無効化',
+                lambda: self._on_disable_sleep(),
+                checked=lambda item: not sleep_enabled,
+                radio=True,
+            ),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem('スリープ有効化', lambda: self._on_enable_sleep()),
-            pystray.MenuItem('スリープ無効化', lambda: self._on_disable_sleep()),
+            pystray.MenuItem('設定...', lambda: self._on_open_settings()),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem('終了', lambda: self._on_exit()),
         )
 
     def _make_tooltip(self) -> str:
-        status = self._manager.get_status()
-        state = '有効' if status['sleep_enabled'] else '無効'
+        state = '有効' if self._manager.get_status()['sleep_enabled'] else '無効'
         return f'SleepSwitcher — スリープ{state}'
 
     def _refresh(self) -> None:

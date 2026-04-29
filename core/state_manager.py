@@ -38,6 +38,9 @@ class StateManager:
         power_control.write_all_timeouts(self._restore_timeouts)
         self._sleep_enabled = True
 
+    def update_restore_timeouts(self, values: dict) -> None:
+        self._restore_timeouts = values.copy()
+
     def get_status(self) -> dict:
         return {
             'sleep_enabled': self._sleep_enabled,

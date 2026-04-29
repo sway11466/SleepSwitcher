@@ -1,42 +1,6 @@
 # backlog.md — SleepSwitcher タスク管理
 
-## フェーズ 1：MVP（基本機能）
-
-### セットアップ
-- [ ] ディレクトリ構成を作成（`config/`, `core/`, `ui/`, `data/`）
-- [ ] `requirements.txt` 作成
-- [ ] 各モジュールの `__init__.py` 作成
-
-### config/settings.py
-- [ ] デフォルト設定値の定義
-- [ ] `data/config.json` の読み込み
-- [ ] `data/config.json` への書き込み
-
-### core/power_control.py
-- [ ] `disable_sleep()` — powercfg でスリープ無効化
-- [ ] `enable_sleep(minutes)` — powercfg でスリープ有効化
-- [ ] `get_current_timeout()` — 現在の設定値取得
-
-### core/state_manager.py
-- [ ] `force_disable()` — 手動スリープ無効化
-- [ ] `force_enable()` — 手動スリープ有効化
-- [ ] `get_status()` — UI 表示用の状態取得
-
-### ui/tray_app.py
-- [ ] システムトレイアイコン表示
-- [ ] トレイメニュー（有効化・無効化・時間設定・終了）
-- [ ] スリープ時間設定ダイアログ
-- [ ] 状態に応じたアイコン切り替え
-
-### main.py
-- [ ] アプリ起動エントリーポイント
-- [ ] 起動時に設定を読み込み・適用
-
-### 動作確認
-- [ ] Windows 11 実機でトレイ表示確認
-- [ ] スリープ有効化・無効化の動作確認
-- [ ] 設定の保存・読み込み確認
-- [ ] アプリ終了後もスリープ設定が維持されることを確認
+## フェーズ 1：MVP（基本機能） ✅ 完了
 
 ---
 
@@ -51,6 +15,7 @@
 ### core/state_manager.py
 - [ ] 1分ごとのポーリングタイマー追加
 - [ ] `apply_schedule()` — スケジュール自動適用
+- [ ] スリープ設定の restore 値の永続化設計（スケジュール機能と合わせて設計）
 
 ### ui/tray_app.py
 - [ ] スケジュール設定ダイアログ
