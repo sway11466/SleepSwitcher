@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 import pystray
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 
 from core.state_manager import StateManager
 
@@ -75,11 +75,19 @@ def _replace_bg_color(img: Image.Image,
 
 
 def _create_icon_image(sleep_enabled: bool) -> Image.Image:
-    size = 64
-    img  = Image.new('RGB', (size, size), color=(30, 30, 30))
-    draw = ImageDraw.Draw(img)
-    color = (100, 180, 100) if sleep_enabled else (220, 80, 80)
+    size  = 64
+    img   = Image.new('RGB', (size, size), color=(30, 30, 30))
+    draw  = ImageDraw.Draw(img)
+    color = (76, 175, 80) if sleep_enabled else (180, 180, 180)
     draw.ellipse([8, 8, size - 8, size - 8], fill=color)
+    try:
+        font = ImageFont.truetype(r'C:\Windows\Fonts\segoeuib.ttf', int(size * 0.55))
+    except OSError:
+        font = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), 'Z', font=font)
+    x = (size - (bbox[2] - bbox[0])) // 2 - bbox[0]
+    y = (size - (bbox[3] - bbox[1])) // 2 - bbox[1]
+    draw.text((x, y), 'Z', font=font, fill=(80, 80, 80))
     return img
 
 
