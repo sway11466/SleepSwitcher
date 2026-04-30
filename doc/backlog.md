@@ -9,12 +9,11 @@
 
 ---
 
-## 配布準備
+## GitHub リリース
 
-- [ ] `assets/icon.ico` アイコン作成
-- [ ] PyInstaller で exe ビルド確認
-- [ ] README.md 作成（インストール手順・使い方）
-- [ ] スタートアップ登録の手順確認（オプション）
+- [ ] README.md 作成（概要・使い方・インストール手順）
+- [ ] Inno Setup インストーラー作成（スタートアップ登録オプション含む）
+- [ ] GitHub Releases に exe + installer を公開
 
 ---
 
