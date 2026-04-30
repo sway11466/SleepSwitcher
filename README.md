@@ -24,11 +24,31 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## exe ビルド
+## ビルド
+
+### exe ビルド
 
 ```bash
-pyinstaller --onefile --windowed --icon=assets/icon.ico main.py
+pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher main.py
 ```
+
+### インストーラービルド
+
+事前に [Inno Setup 6](https://jrsoftware.org/isdl.php) をインストールしておく。
+
+- wingetでインストールした場合
+```bash
+"%LOCALAPPDATA%\Programs\Inno Setup 6\iscc.exe" installer/installer.iss
+```
+
+- 公式インストーラーでインストールした場合
+```bash
+"C:\Program Files (x86)\Inno Setup 6\iscc.exe" installer/installer.iss
+```
+
+ビルド成果物は `dist/` に出力される：
+- `dist/SleepSwitcher.exe` — 単体 exe
+- `dist/SleepSwitcher_Setup.exe` — インストーラー
 
 ## ディレクトリ構成
 
