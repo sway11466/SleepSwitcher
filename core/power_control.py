@@ -1,6 +1,8 @@
 import re
 import subprocess
 
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW
+
 # powercfg /change の friendly name キーと dict キーのマッピング
 _PARAMS = {
     'standby_ac':   'standby-timeout-ac',
@@ -47,6 +49,7 @@ def _query_setting(setting_guid: str) -> tuple[int, int]:
         text=True,
         encoding='utf-8',
         errors='replace',
+        creationflags=_NO_WINDOW,
     )
     ac = dc = 0
     for line in result.stdout.splitlines():
@@ -64,4 +67,4 @@ def _query_setting(setting_guid: str) -> tuple[int, int]:
 
 
 def _run_powercfg(*args: str) -> None:
-    subprocess.run(['powercfg'] + list(args), check=True)
+    subprocess.run(['powercfg'] + list(args), check=True, creationflags=_NO_WINDOW)

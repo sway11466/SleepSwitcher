@@ -1,11 +1,14 @@
+import os
 import threading
 import tkinter as tk
 from tkinter import messagebox
 
 import pystray
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageTk
 
 from core.state_manager import StateManager
+
+_ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
 
 # グリッド定数
 CELL_W   = 14
@@ -54,6 +57,21 @@ def _grid_to_periods(grid_row: list) -> list:
             periods.append({'from': _slot_to_time(start), 'to': _slot_to_time(i)})
             in_period = False
     return periods
+
+
+def _replace_bg_color(img: Image.Image,
+                      src: tuple, dst: tuple, tolerance: int = 10) -> Image.Image:
+    """src に近い色のピクセルを dst に置換する"""
+    img = img.convert('RGB')
+    pixels = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b = pixels[x, y]
+            if (abs(r - src[0]) <= tolerance and
+                    abs(g - src[1]) <= tolerance and
+                    abs(b - src[2]) <= tolerance):
+                pixels[x, y] = dst
+    return img
 
 
 def _create_icon_image(sleep_enabled: bool) -> Image.Image:
@@ -189,6 +207,31 @@ class TrayApp:
         sleep_enabled_var.trace_add('write', update_spinbox_state)
         update_spinbox_state()
 
+        # スリープ状態画像（右端）
+        _status_imgs = []  # GC 防止用
+        try:
+            _img_h = 150
+            for fname in ('pc_sleeping.jpg', 'pc_awake.jpg'):
+                raw = Image.open(os.path.join(_ASSETS_DIR, fname))
+                raw = _replace_bg_color(raw, src=(233, 233, 233), dst=(240, 240, 240))
+                w, h = raw.size
+                _img_w = int(_img_h * w / h)
+                raw = raw.resize((_img_w, _img_h), Image.LANCZOS)
+                _status_imgs.append(ImageTk.PhotoImage(raw))
+            img_sleeping, img_awake = _status_imgs
+
+            init_img = img_sleeping if status['sleep_enabled'] else img_awake
+            status_img_label = tk.Label(sleep_frame, image=init_img)
+            status_img_label.grid(row=0, column=8, rowspan=6, padx=(16, 4))
+
+            def update_status_image(*_):
+                status_img_label.configure(
+                    image=img_sleeping if sleep_enabled_var.get() else img_awake
+                )
+            sleep_enabled_var.trace_add('write', update_status_image)
+        except Exception:
+            pass  # 画像ファイルがない場合はスキップ
+
         # ── スケジュール ──
         sched_frame = tk.LabelFrame(root, text='スケジュール', padx=8, pady=6)
         sched_frame.pack(fill='x', padx=12, pady=(0, 6))
@@ -288,6 +331,8 @@ class TrayApp:
             self._manager.update_schedule(new_schedule)
 
             self._refresh()
+            # スケジュール適用後の実際の状態をUIに反映（画像も trace 経由で更新される）
+            sleep_enabled_var.set(self._manager.get_status()['sleep_enabled'])
             messagebox.showinfo('完了', '設定を保存しました。', parent=root)
 
         tk.Button(btn_frame, text='キャンセル',     width=12, command=root.destroy).pack(side='left')
