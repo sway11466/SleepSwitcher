@@ -1,19 +1,12 @@
 # backlog.md — SleepSwitcher タスク管理
 
-## フェーズ 3：祝日対応（将来）
+## 祝日対応（将来）
 
-- [ ] `data/holidays.json` フォーマット定義
-- [ ] `core/schedule.py` の `is_holiday()` 実装
-- [ ] 祝日リスト管理 UI
-- [ ] 祝日当日のルール適用確認
+祝日判定は別プロジェクト [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) として開発予定。
+完成後に以下を実装する。
 
----
-
-## GitHub リリース
-
-- [ ] README.md 作成（概要・使い方・インストール手順）
-- [ ] Inno Setup インストーラー作成（スタートアップ登録オプション含む）
-- [ ] GitHub Releases に exe + installer を公開
+- [ ] `core/schedule.py` の `is_holiday()` を holiday-jp-pip を使って実装
+- [ ] 祝日当日のスケジュール適用確認
 
 ---
 
