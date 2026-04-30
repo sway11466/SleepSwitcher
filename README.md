@@ -29,7 +29,7 @@ python main.py
 ### exe ビルド
 
 ```bash
-pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher main.py
+pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --add-data "assets/pc_sleeping.jpg;assets" --add-data "assets/pc_awake.jpg;assets" --add-data "assets/icon.ico;assets" main.py
 ```
 
 ### インストーラービルド

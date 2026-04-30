@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 import tkinter as tk
 from tkinter import messagebox
@@ -8,7 +9,11 @@ from PIL import Image, ImageDraw, ImageFont, ImageTk
 
 from core.state_manager import StateManager
 
-_ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
+# PyInstaller --onefile では sys._MEIPASS に展開される
+if getattr(sys, 'frozen', False):
+    _ASSETS_DIR = os.path.join(sys._MEIPASS, 'assets')
+else:
+    _ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
 
 # グリッド定数
 CELL_W   = 14
@@ -131,6 +136,10 @@ class TrayApp:
         root = tk.Tk()
         root.title('SleepSwitcher — 設定')
         root.resizable(False, False)
+        try:
+            root.iconbitmap(os.path.join(_ASSETS_DIR, 'icon.ico'))
+        except Exception:
+            pass
 
         # ── 使い方・注意事項 ──
         info_frame = tk.LabelFrame(root, text='使い方・注意事項', padx=8, pady=6)

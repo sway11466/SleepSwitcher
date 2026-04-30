@@ -2,8 +2,8 @@
 
 ## プロジェクト概要
 
-Windows 11 のモニタースリープを自動制御するシステムトレイ常駐アプリ。
-Python + PySimpleGUI で実装し、PyInstaller で exe 配布。
+Windows 11 のスリープ・休止状態を自動制御するシステムトレイ常駐アプリ。
+Python + tkinter で実装し、PyInstaller で exe 配布。
 
 ## Claude の行動規則
 
@@ -30,8 +30,11 @@ pip install -r requirements.txt
 # アプリ起動
 python main.py
 
-# exe ビルド
-pyinstaller --onefile --windowed --icon=assets/icon.ico main.py
+# exe ビルド（assets を埋め込み）
+pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --add-data "assets/pc_sleeping.jpg;assets" --add-data "assets/pc_awake.jpg;assets" --add-data "assets/icon.ico;assets" main.py
+
+# インストーラービルド
+"%LOCALAPPDATA%\Programs\Inno Setup 6\iscc.exe" installer/installer.iss
 ```
 
 ## Windows コマンド（powercfg）
@@ -56,4 +59,4 @@ powercfg /query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE
 - Windows 11 専用（powercfg は Windows コマンド）
 - 管理者権限なしで動作すること（powercfg /change は一般ユーザーで実行可能）
 - ローカル専用アプリ：ネットワーク機能は実装しない
-- PySimpleGUI のライセンスに注意（個人利用は無償）
+- PyInstaller でビルドする際は `--add-data` で assets を埋め込むこと
