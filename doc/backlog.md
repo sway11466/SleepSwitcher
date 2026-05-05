@@ -1,6 +1,10 @@
 # backlog.md — SleepSwitcher タスク管理
 
-## 祝日対応（将来）
+## 当日のみの一時的な変更を行う機能
+
+詳細未決。スケジュールに「当日のみ」があるといいのかな？
+
+## 祝日対応
 
 祝日判定は別プロジェクト [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) として開発予定。
 完成後に以下を実装する。
