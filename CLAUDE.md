@@ -31,7 +31,7 @@ pip install -r requirements.txt
 python main.py
 
 # exe ビルド（assets を埋め込み）
-pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --add-data "assets/pc_sleeping.jpg;assets" --add-data "assets/pc_awake.jpg;assets" --add-data "assets/icon.ico;assets" main.py
+pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --add-data "assets/pc_sleeping.jpg;assets" --add-data "assets/pc_awake.jpg;assets" --add-data "assets/icon.ico;assets" --collect-data holiday_jp main.py
 
 # インストーラービルド
 "%LOCALAPPDATA%\Programs\Inno Setup 6\iscc.exe" installer/installer.iss
@@ -60,3 +60,4 @@ powercfg /query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE
 - 管理者権限なしで動作すること（powercfg /change は一般ユーザーで実行可能）
 - ローカル専用アプリ：ネットワーク機能は実装しない
 - PyInstaller でビルドする際は `--add-data` で assets を埋め込むこと
+- holiday-jp-pip の祝日 CSV を含めるため `--collect-data holiday_jp` も必須

@@ -13,13 +13,13 @@ SleepSwitcher/
 │   ├── __init__.py
 │   ├── power_control.py    # powercfg コマンド実行
 │   ├── schedule.py         # スケジュール判定ロジック
+│   ├── holidays.py         # 祝日判定（holiday-jp-pip ラッパー）
 │   └── state_manager.py    # アプリ状態管理・スケジュール自動適用
 ├── ui/
 │   ├── __init__.py
 │   └── tray_app.py         # システムトレイ UI
 └── data/
-    ├── config.json         # ユーザー設定（永続化）
-    └── holidays.json       # 祝日リスト（フェーズ 3 用、初版は空）
+    └── config.json         # ユーザー設定（永続化）
 ```
 
 ## モジュール依存関係
@@ -46,8 +46,9 @@ main.py
 ### `config/settings.py`
 
 - `data/config.json` の読み書き
-- 管理対象：タイムアウト値（4値）とスケジュールルール（曜日ごとの from-to 配列）
+- 管理対象：タイムアウト値（4値）とスケジュールルール（曜日＋祝日ごとの from-to 配列）
 - デフォルト設定値の定義
+- 旧形式の設定をロード時にマイグレーションする
 
 ```python
 def load() -> dict
@@ -69,13 +70,22 @@ def disable_all() -> None             # 4値をすべて 0 に設定
 
 ### `core/schedule.py`
 
-- 現在時刻・曜日からスリープ OFF にすべきか判定
-- 純粋関数（副作用なし）
-- 曜日ごとの from-to 配列を走査して現在時刻が含まれるか判定
+- 現在時刻・曜日・祝日からスリープ OFF にすべきか判定
+- 当日が祝日なら `days.holiday` を、平日なら曜日ごとの配列を走査
+- 祝日判定は `core/holidays.py` に委譲
 
 ```python
 def should_disable_sleep(schedule: dict, now: datetime) -> bool
-def is_holiday(schedule: dict, date: date) -> bool  # フェーズ 3 用スタブ
+```
+
+### `core/holidays.py`
+
+- holiday-jp-pip をラップし、祝日 CSV をメモリにキャッシュする
+- 同梱 CSV（`holiday_jp/syukujitsu.csv`）の `mtime` を毎回確認し、変更があれば再ロード
+- CSV はライブラリパッケージ内に同梱されているものをそのまま利用
+
+```python
+def is_holiday(d: date) -> bool
 ```
 
 ### `core/state_manager.py`
@@ -123,10 +133,11 @@ class StateManager:
 優先度の概念を持たず、後勝ちで上書きする。
 スケジュール変更保存時は `apply_schedule(now)` を即時実行し、現在時刻で評価・適用する。
 
-### 祝日対応の拡張ポイント
+### 祝日対応
 
-`schedule.py` の `is_holiday()` をスタブとして定義しておき、
-フェーズ 3 で実装を差し込む。`config.json` の `holidays` 配列は初版から構造を確保。
+- 祝日判定は外部ライブラリ [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) に委譲
+- ライブラリ同梱の祝日 CSV をそのまま使用（自前 CSV は持たない）
+- `should_disable_sleep` は祝日に該当する日は `days.holiday` のみを参照し、曜日設定は無視する
 
 ## 技術選定の理由
 
@@ -136,3 +147,4 @@ class StateManager:
 | JSON 設定ファイル | 外部ライブラリ不要、人間が読める |
 | powercfg | Windows 標準コマンド、管理者権限不要 |
 | PyInstaller | 単一 exe にまとめられ配布が容易 |
+| holiday-jp-pip | 内閣府データに基づく日本の祝日判定。CSV 同梱で外部依存なし |

@@ -24,8 +24,8 @@ SLOTS    = 48  # 30分 × 48 = 24時間
 COLOR_OFF = '#4CAF50'
 COLOR_ON  = '#DCDCDC'
 
-DAYS_JP  = ['月', '火', '水', '木', '金', '土', '日']
-DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+DAYS_JP  = ['月', '火', '水', '木', '金', '土', '日', '祝']
+DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'holiday']
 
 
 def _time_to_slot(time_str: str) -> int:

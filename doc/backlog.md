@@ -6,11 +6,14 @@
 
 ## 祝日対応
 
-祝日判定は別プロジェクト [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) として開発予定。
-完成後に以下を実装する。
+祝日判定は別プロジェクト [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) を採用。
 
-- [ ] `core/schedule.py` の `is_holiday()` を holiday-jp-pip を使って実装
-- [ ] 祝日当日のスケジュール適用確認
+- [x] `core/holidays.py` を holiday-jp-pip を使って実装（mtime キャッシュ付き）
+- [x] `core/schedule.py` を祝日対応に修正（祝日は `days.holiday` のみ参照）
+- [x] `config/settings.py` に `holiday` キー追加と旧設定マイグレーション
+- [x] `ui/tray_app.py` のスケジュール表に「祝」行を追加
+- [x] PyInstaller ビルドコマンドに `--collect-data holiday_jp` 追加
+- [ ] 祝日当日のスケジュール適用確認（実機テスト）
 
 ---
 

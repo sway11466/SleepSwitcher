@@ -14,15 +14,15 @@ def default() -> dict:
         },
         'schedule': {
             'days': {
-                'mon': [],
-                'tue': [],
-                'wed': [],
-                'thu': [],
-                'fri': [],
-                'sat': [],
-                'sun': [],
+                'mon':     [],
+                'tue':     [],
+                'wed':     [],
+                'thu':     [],
+                'fri':     [],
+                'sat':     [],
+                'sun':     [],
+                'holiday': [],
             },
-            'holidays': [],
         },
     }
 
@@ -32,7 +32,9 @@ def load() -> dict:
     if not os.path.exists(path):
         return default()
     with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        config = json.load(f)
+    _migrate(config)
+    return config
 
 
 def save(config: dict) -> None:
@@ -40,3 +42,10 @@ def save(config: dict) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
+
+
+def _migrate(config: dict) -> None:
+    schedule = config.setdefault('schedule', {})
+    days = schedule.setdefault('days', {})
+    days.setdefault('holiday', [])
+    schedule.pop('holidays', None)
