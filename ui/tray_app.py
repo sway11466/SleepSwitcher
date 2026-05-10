@@ -2,11 +2,13 @@ import os
 import sys
 import threading
 import tkinter as tk
+from datetime import datetime
 from tkinter import messagebox
 
 import pystray
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 
+from core import holidays
 from core.state_manager import StateManager
 
 # PyInstaller --onefile では sys._MEIPASS に展開される
@@ -277,11 +279,21 @@ class TrayApp:
             x = LABEL_W + h * 2 * CELL_W
             canvas.create_text(x + CELL_W // 2, HEADER_H // 2, text=str(h), font=('', 7))
 
+        # 今日の行・現在時刻スロットを算出
+        now = datetime.now()
+        today_row = 7 if holidays.is_holiday(now.date()) else now.weekday()
+        today_slot = now.hour * 2 + now.minute // 30
+
         # セル描画
         cell_ids = [[None] * SLOTS for _ in range(len(DAYS_JP))]
         for row, day in enumerate(DAYS_JP):
             y = HEADER_H + row * CELL_H
-            canvas.create_text(LABEL_W // 2, y + CELL_H // 2, text=day, font=('', 9))
+            is_today = row == today_row
+            canvas.create_text(
+                LABEL_W // 2, y + CELL_H // 2, text=day,
+                font=('', 9, 'bold') if is_today else ('', 9),
+                fill='red' if is_today else 'black',
+            )
             for col in range(SLOTS):
                 x = LABEL_W + col * CELL_W
                 color = COLOR_OFF if grid_state[row][col] else COLOR_ON
@@ -290,6 +302,12 @@ class TrayApp:
                     fill=color, outline='white', width=1,
                 )
                 cell_ids[row][col] = cid
+
+        # 今日の現在時刻スロットに赤丸を重ねる
+        cx = LABEL_W + today_slot * CELL_W + CELL_W // 2
+        cy = HEADER_H + today_row * CELL_H + CELL_H // 2
+        r = 4
+        canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill='red', outline='red')
 
         # マウス操作（クリック＋ドラッグで塗り）
         drag_value = [None]
