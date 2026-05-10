@@ -50,7 +50,7 @@ git push origin v1.0.0
 2. タグ（`v1.0.0`）を選択
 3. タイトル例：`SleepSwitcher v1.0.0`
 4. 以下のファイルを添付：
-   - `dist/SleepSwitcher.exe`
+   - `dist/SleepSwitcher_v{version}.zip`（`SleepSwitcher.exe` と `syukujitsu.csv` をまとめたもの）
    - `dist/SleepSwitcher_Setup.exe`
 5. 「Publish release」
 

@@ -1,5 +1,5 @@
 #define AppName "SleepSwitcher"
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 #define AppPublisher "sway11466"
 #define AppURL "https://github.com/sway11466/SleepSwitcher"
 #define AppExeName "SleepSwitcher.exe"
@@ -29,6 +29,7 @@ Name: "startup"; Description: "Windows 起動時に自動的に開始する"; Gr
 [Files]
 Source: "..\dist\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\assets\readme.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\assets\syukujitsu.csv"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"

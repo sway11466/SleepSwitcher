@@ -1,4 +1,4 @@
 PySimpleGUI>=4.60.0
 pystray>=0.19.0
 Pillow>=9.0.0
-holiday-jp-pip>=0.2.0
+holiday-jp-pip>=0.3.0

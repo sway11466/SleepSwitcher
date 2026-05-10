@@ -81,8 +81,11 @@ def should_disable_sleep(schedule: dict, now: datetime) -> bool
 ### `core/holidays.py`
 
 - holiday-jp-pip をラップし、祝日 CSV をメモリにキャッシュする
-- 同梱 CSV（`holiday_jp/syukujitsu.csv`）の `mtime` を毎回確認し、変更があれば再ロード
-- CSV はライブラリパッケージ内に同梱されているものをそのまま利用
+- CSV を以下の優先順で探索する：
+    1. `%APPDATA%\SleepSwitcher\syukujitsu.csv`（ユーザによる上書き用）
+    2. frozen 時：exe と同じフォルダの `syukujitsu.csv`／開発時：リポジトリの `assets/syukujitsu.csv`
+- 解決したパスと `mtime` をキャッシュキーにし、変更があれば `HolidayJP` を再生成
+- 範囲外の年（2028 年以降）でも例外を出さないよう `unsupported_date_behavior='ignore'` で初期化
 
 ```python
 def is_holiday(d: date) -> bool
@@ -135,8 +138,9 @@ class StateManager:
 
 ### 祝日対応
 
-- 祝日判定は外部ライブラリ [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) に委譲
-- ライブラリ同梱の祝日 CSV をそのまま使用（自前 CSV は持たない）
+- 祝日判定は外部ライブラリ [holiday-jp-pip](https://github.com/sway11466/holiday-jp-pip) に委譲（v0.3.0+ の `csv_path` 機能を利用）
+- 祝日 CSV は `assets/syukujitsu.csv` をリポジトリに同梱し、配布時は exe と同じ場所に配置する
+- ユーザは `%APPDATA%\SleepSwitcher\syukujitsu.csv` に置くことで上書き可能（探索順は `core/holidays.py` 参照）
 - `should_disable_sleep` は祝日に該当する日は `days.holiday` のみを参照し、曜日設定は無視する
 
 ## 技術選定の理由
@@ -147,4 +151,4 @@ class StateManager:
 | JSON 設定ファイル | 外部ライブラリ不要、人間が読める |
 | powercfg | Windows 標準コマンド、管理者権限不要 |
 | PyInstaller | 単一 exe にまとめられ配布が容易 |
-| holiday-jp-pip | 内閣府データに基づく日本の祝日判定。CSV 同梱で外部依存なし |
+| holiday-jp-pip | 内閣府データに基づく日本の祝日判定。`csv_path` で外部 CSV を指定できユーザによる差し替えが可能 |

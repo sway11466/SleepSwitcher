@@ -13,10 +13,7 @@ class StateManager:
         self._timer = None
         self._on_state_change = lambda: None
 
-        # 起動時に config の timeouts を Windows に適用
-        power_control.write_all_timeouts(self._config['timeouts'])
-
-        # スケジュールを即時評価・適用
+        # 起動時に Windows の現在値とスケジュール判定を照合し、必要なら再適用
         self._apply_schedule_now()
 
         # 1分ごとのポーリング開始
@@ -65,13 +62,19 @@ class StateManager:
             self._timer.cancel()
 
     def _apply_schedule_now(self) -> None:
+        # スケジュール判定と Windows 現在値を照合し、矛盾していれば書き込む
         prev = self._sleep_enabled
-        if schedule_module.should_disable_sleep(self._config['schedule'], datetime.now()):
-            power_control.disable_all()
-            self._sleep_enabled = False
-        else:
-            power_control.write_all_timeouts(self._config['timeouts'])
-            self._sleep_enabled = True
+        should_disable = schedule_module.should_disable_sleep(
+            self._config['schedule'], datetime.now()
+        )
+        actual   = power_control.read_all_timeouts()
+        expected = {k: 0 for k in actual} if should_disable else self._config['timeouts']
+        if actual != expected:
+            if should_disable:
+                power_control.disable_all()
+            else:
+                power_control.write_all_timeouts(self._config['timeouts'])
+        self._sleep_enabled = not should_disable
         if self._sleep_enabled != prev:
             self._on_state_change()
 

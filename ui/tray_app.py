@@ -1,7 +1,9 @@
 import os
+import subprocess
 import sys
 import threading
 import tkinter as tk
+import winreg
 from datetime import datetime
 from tkinter import messagebox
 
@@ -98,6 +100,54 @@ def _create_icon_image(sleep_enabled: bool) -> Image.Image:
     return img
 
 
+def _open_in_text_editor(path: str) -> None:
+    """.txt の既定アプリでファイルを開く。失敗時は notepad."""
+    exe = _get_default_text_editor_exe()
+    if exe and os.path.isfile(exe):
+        try:
+            subprocess.Popen([exe, path])
+            return
+        except OSError:
+            pass
+    subprocess.Popen(['notepad.exe', path])
+
+
+def _get_default_text_editor_exe() -> str | None:
+    """.txt の既定アプリの実行ファイルパスを返す。取得できなければ None。"""
+    cmd = _get_default_text_editor_command()
+    if not cmd:
+        return None
+    expanded = os.path.expandvars(cmd)
+    # 先頭がクォートされていれば閉じクォートまで、そうでなければ最初の空白までを exe パスとする
+    if expanded.startswith('"'):
+        end = expanded.find('"', 1)
+        return expanded[1:end] if end > 0 else None
+    space = expanded.find(' ')
+    return expanded if space < 0 else expanded[:space]
+
+
+def _get_default_text_editor_command() -> str | None:
+    """Windows レジストリから .txt の既定アプリの起動コマンドラインを取得する。"""
+    try:
+        progid = None
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r'Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.txt\UserChoice',
+            ) as k:
+                progid, _ = winreg.QueryValueEx(k, 'ProgId')
+        except OSError:
+            pass
+        if not progid:
+            with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, '.txt') as k:
+                progid, _ = winreg.QueryValueEx(k, '')
+        with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, fr'{progid}\shell\open\command') as k:
+            cmd, _ = winreg.QueryValueEx(k, '')
+        return cmd
+    except OSError:
+        return None
+
+
 class TrayApp:
     def __init__(self, manager: StateManager):
         self._manager = manager
@@ -146,7 +196,46 @@ class TrayApp:
         # ── 使い方・注意事項 ──
         info_frame = tk.LabelFrame(root, text='使い方・注意事項', padx=8, pady=6)
         info_frame.pack(fill='x', padx=12, pady=(12, 6))
-        info_text = (
+
+        def _open_default_csv():
+            if getattr(sys, 'frozen', False):
+                path = os.path.join(os.path.dirname(sys.executable), 'syukujitsu.csv')
+            else:
+                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                path = os.path.join(repo_root, 'assets', 'syukujitsu.csv')
+            _open_in_text_editor(path)
+
+        def _open_appdata_folder():
+            folder = os.path.join(os.environ['APPDATA'], 'SleepSwitcher')
+            os.makedirs(folder, exist_ok=True)
+            os.startfile(folder)
+
+        info = tk.Text(
+            info_frame,
+            wrap='word',
+            bd=0,
+            bg=info_frame.cget('bg'),
+            cursor='arrow',
+            font='TkDefaultFont',
+            height=14,
+            padx=0,
+            pady=0,
+            highlightthickness=0,
+            takefocus=0,
+        )
+        info.pack(fill='x')
+
+        info.tag_configure('link', foreground='#0078D4')
+
+        def _bind_link(tag, callback):
+            info.tag_bind(tag, '<Enter>', lambda e: info.config(cursor='hand2'))
+            info.tag_bind(tag, '<Leave>', lambda e: info.config(cursor='arrow'))
+            info.tag_bind(tag, '<Button-1>', lambda e: callback())
+
+        _bind_link('link_csv', _open_default_csv)
+        _bind_link('link_folder', _open_appdata_folder)
+
+        info.insert('end',
             '■ 使い方\n'
             '・スリープ設定の有効／無効を設定画面やタスクトレイから切り替えられます\n'
             '・特定の曜日・時間帯だけ無効化したい場合はスケジュールを設定できます\n'
@@ -156,12 +245,20 @@ class TrayApp:
             '・スリープ設定は Windows の設定と同期しています\n'
             '・無効となっている状態では Windows 上の設定は 0（無効）になります\n'
             '・有効になったタイミングで、このアプリで指定した値に戻ります\n'
+            '・祝日設定を変更したい場合は'
+        )
+        info.insert('end', 'このCSV', ('link', 'link_csv'))
+        info.insert('end', 'を編集して')
+        info.insert('end', 'このフォルダ', ('link', 'link_folder'))
+        info.insert('end',
+            'に保存してください\n'
             '\n'
             '■ 注意事項\n'
             '・アプリを終了するとスケジュール制御が止まるためタスクトレイに常駐させてください\n'
             '・スリープ状態に入ってしまった場合は、手動で復帰させる必要があります'
         )
-        tk.Label(info_frame, text=info_text, anchor='w', justify='left').pack(fill='x')
+
+        info.config(state='disabled')
 
         # ── スリープ設定 ──
         sleep_frame = tk.LabelFrame(root, text='スリープ設定', padx=8, pady=6)

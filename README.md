@@ -29,7 +29,20 @@ python main.py
 ### exe ビルド
 
 ```bash
-pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --add-data "assets/pc_sleeping.jpg;assets" --add-data "assets/pc_awake.jpg;assets" --add-data "assets/icon.ico;assets" main.py
+pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --add-data "assets/pc_sleeping.jpg;assets" --add-data "assets/pc_awake.jpg;assets" --add-data "assets/icon.ico;assets" --collect-data holiday_jp main.py
+copy assets\syukujitsu.csv dist\syukujitsu.csv
+copy assets\readme.txt dist\readme.txt
+```
+
+- `--collect-data holiday_jp` は holiday-jp-pip の import 時に必要なバンドル CSV を埋め込むため必須
+- `syukujitsu.csv` は exe と同じフォルダに配置する（ユーザが後から差し替えできるように外出ししている）
+
+### 配布用 zip 作成
+
+GitHub Releases に添付する用の zip。`v1.1.0` の部分は実際のバージョンに置き換える。
+
+```powershell
+Compress-Archive -Path dist\SleepSwitcher.exe,dist\syukujitsu.csv,dist\readme.txt -DestinationPath dist\SleepSwitcher_v1.1.0.zip -Force
 ```
 
 ### インストーラービルド
@@ -48,6 +61,9 @@ pyinstaller --onefile --windowed --icon=assets/icon.ico --name SleepSwitcher --a
 
 ビルド成果物は `dist/` に出力される：
 - `dist/SleepSwitcher.exe` — 単体 exe
+- `dist/syukujitsu.csv` — 祝日 CSV（exe と並べて配置する）
+- `dist/readme.txt` — ユーザ向け README
+- `dist/SleepSwitcher_v{version}.zip` — exe・CSV・README をまとめた配布用 zip
 - `dist/SleepSwitcher_Setup.exe` — インストーラー
 
 ## ディレクトリ構成
