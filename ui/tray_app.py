@@ -11,6 +11,7 @@ import pystray
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 
 from core import holidays
+from core import update_control
 from core.state_manager import StateManager
 
 # PyInstaller --onefile では sys._MEIPASS に展開される
@@ -152,6 +153,7 @@ class TrayApp:
     def __init__(self, manager: StateManager):
         self._manager = manager
         self._icon    = None
+        self._proposal_open = False
 
     def run(self) -> None:
         self._icon = pystray.Icon(
@@ -178,6 +180,36 @@ class TrayApp:
     def _on_exit(self):
         self._manager.stop()
         self._icon.stop()
+
+    def _on_toggle_update_guard(self):
+        enabled = not self._manager.config['update_guard']['enabled']
+        self._manager.set_update_guard(enabled)
+        self._refresh()
+
+    # --- restart proposal ---
+
+    def propose_restart(self) -> None:
+        if self._proposal_open:
+            return
+        self._proposal_open = True
+        threading.Thread(target=self._show_restart_proposal, daemon=True).start()
+
+    def _show_restart_proposal(self):
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        try:
+            accepted = messagebox.askyesno(
+                'SleepSwitcher — Windows Update',
+                '更新の適用に再起動が必要です。\n今すぐ再起動しますか？\n\n'
+                '「いいえ」を選ぶか応答しなければ、再起動は行いません。',
+                parent=root,
+            )
+        finally:
+            root.destroy()
+            self._proposal_open = False
+        if accepted:
+            update_control.restart()
 
     # --- settings dialog ---
 
@@ -491,6 +523,11 @@ class TrayApp:
                 radio=True,
             ),
             pystray.Menu.SEPARATOR,
+            pystray.MenuItem(
+                'Windows Update の自動再起動を抑止',
+                lambda: self._on_toggle_update_guard(),
+                checked=lambda item: self._manager.config['update_guard']['enabled'],
+            ),
             pystray.MenuItem('設定...', lambda: self._on_open_settings()),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem('終了', lambda: self._on_exit()),

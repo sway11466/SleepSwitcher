@@ -11,6 +11,7 @@ def main():
     manager = StateManager()
     app = TrayApp(manager)
     manager.set_state_change_callback(app._refresh)
+    manager.set_restart_proposal_callback(app.propose_restart)
     app.run()
 
 

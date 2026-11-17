@@ -24,7 +24,13 @@ def default() -> dict:
                 'holiday': [],
             },
         },
+        'update_guard': _default_update_guard(),
     }
+
+
+def _default_update_guard() -> dict:
+    # original_hours: 機能 ON 前のアクティブ時間 [start, end]。OFF 時に書き戻す
+    return {'enabled': False, 'original_hours': None}
 
 
 def load() -> dict:
@@ -49,3 +55,4 @@ def _migrate(config: dict) -> None:
     days = schedule.setdefault('days', {})
     days.setdefault('holiday', [])
     schedule.pop('holidays', None)
+    config.setdefault('update_guard', _default_update_guard())

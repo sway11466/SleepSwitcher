@@ -12,6 +12,7 @@ SleepSwitcher/
 ├── core/
 │   ├── __init__.py
 │   ├── power_control.py    # powercfg コマンド実行
+│   ├── update_control.py   # Windows Update の再起動抑止（アクティブ時間の制御）
 │   ├── schedule.py         # スケジュール判定ロジック
 │   ├── holidays.py         # 祝日判定（holiday-jp-pip ラッパー）
 │   └── state_manager.py    # アプリ状態管理・スケジュール自動適用
@@ -91,6 +92,19 @@ def should_disable_sleep(schedule: dict, now: datetime) -> bool
 def is_holiday(d: date) -> bool
 ```
 
+### `core/update_control.py`
+
+- Windows Update のアクティブ時間（レジストリ）の読み書き、再起動待ちの検出、入力アイドル時間の取得、再起動の実行
+- Windows Update まわりの OS との接点をここに集約する
+
+```python
+def next_active_hours(start, end, now) -> tuple[int, int] | None  # ずらし判定（純粋関数）
+def keep_active(now) -> None            # 必要なときだけアクティブ時間をずらす
+def is_reboot_pending() -> bool
+def seconds_since_last_input() -> float
+def restart() -> None
+```
+
 ### `core/state_manager.py`
 
 - 起動時に Windows の現在値を読み込みメモリに保持
@@ -142,6 +156,16 @@ class StateManager:
 - 祝日 CSV は `assets/syukujitsu.csv` をリポジトリに同梱し、配布時は exe と同じ場所に配置する
 - ユーザは `%APPDATA%\SleepSwitcher\syukujitsu.csv` に置くことで上書き可能（探索順は `core/holidays.py` 参照）
 - `should_disable_sleep` は祝日に該当する日は `days.holiday` のみを参照し、曜日設定は無視する
+
+### Windows Update の自動再起動抑止
+
+- Windows はアクティブ時間内には自動再起動しない。ただしアクティブ時間の幅は最大 18 時間で、固定のままでは 6 時間の隙間が残る
+- そこで 1 分ごとのポーリングでアクティブ時間を確認し、現在時刻が窓の外、または終了まで 60 分以内になったときだけ、開始を「現在の時」に置き直す（終了は 18 時間後）。書き込みはおよそ 17 時間に 1 回
+- 対象キー `HKLM\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings` は `BUILTIN\Users` に SetValue が許可されており、管理者権限は不要
+- 機能 ON 時に元のアクティブ時間を `config.json` の `update_guard.original_hours` に退避し、OFF 時に書き戻す
+- 再起動待ち（`RebootRequired` キーの存在）を検出したら、直近 60 秒以内に入力があったときだけ再起動を提案する。応答がなければ何もしない。提案は 4 時間に 1 回まで
+- 在席判定にプロセスやログイン状態は使わない（常時ログイン・常時処理中の運用を想定）
+- スリープ中やアプリ終了中は窓をずらせないため、その間は抑止が効かない
 
 ## 技術選定の理由
 
