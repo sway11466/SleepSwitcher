@@ -1,5 +1,5 @@
 #define AppName "SleepSwitcher"
-#define AppVersion "1.1.0"
+#define AppVersion "1.2.0"
 #define AppPublisher "sway11466"
 #define AppURL "https://github.com/sway11466/SleepSwitcher"
 #define AppExeName "SleepSwitcher.exe"

@@ -39,10 +39,10 @@ copy assets\readme.txt dist\readme.txt
 
 ### 配布用 zip 作成
 
-GitHub Releases に添付する用の zip。`v1.1.0` の部分は実際のバージョンに置き換える。
+GitHub Releases に添付する用の zip。`v1.2.0` の部分は実際のバージョンに置き換える。
 
 ```powershell
-Compress-Archive -Path dist\SleepSwitcher.exe,dist\syukujitsu.csv,dist\readme.txt -DestinationPath dist\SleepSwitcher_v1.1.0.zip -Force
+Compress-Archive -Path dist\SleepSwitcher.exe,dist\syukujitsu.csv,dist\readme.txt -DestinationPath dist\SleepSwitcher_v1.2.0.zip -Force
 ```
 
 ### インストーラービルド
