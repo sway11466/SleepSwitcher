@@ -204,6 +204,8 @@ class TrayApp:
                 '更新の適用に再起動が必要です。\n今すぐ再起動しますか？\n\n'
                 '「いいえ」を選ぶか応答しなければ、再起動は行いません。',
                 parent=root,
+                # 作業中の Enter / Space の誤入力で再起動しないよう既定は「いいえ」
+                default=messagebox.NO,
             )
         finally:
             root.destroy()
